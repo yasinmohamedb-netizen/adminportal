@@ -1,6 +1,8 @@
 // AdminTransplantsDashboard.js
 import React, { useEffect, useState } from "react";
 
+const API_BASE = "https://healthyz-backend.onrender.com/api"; // ✅ Updated backend URL
+
 function AdminTransplantsDashboard() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,7 +13,7 @@ function AdminTransplantsDashboard() {
 
   const fetchRequests = () => {
     setLoading(true);
-    fetch("http://localhost:8080/api/transplants")
+    fetch(`${API_BASE}/transplants`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
@@ -27,7 +29,7 @@ function AdminTransplantsDashboard() {
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/transplants/${id}/status`, {
+      const res = await fetch(`${API_BASE}/transplants/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),

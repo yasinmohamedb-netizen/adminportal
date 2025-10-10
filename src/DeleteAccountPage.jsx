@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
+const API_BASE = "https://healthyz-backend.onrender.com/api";
 
 function DeleteAccountPage({ user }) {
   const [email, setEmail] = useState(user?.email || "");
@@ -21,7 +22,7 @@ function DeleteAccountPage({ user }) {
 
     setLoading(true);
     try {
-      const res = await axios.post("/api/delete-account", {
+      const res = await axios.post(`${API_BASE}/delete-account`, {
         email,
         username,
         reason,

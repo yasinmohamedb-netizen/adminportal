@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+const API_BASE = "https://healthyz-backend.onrender.com/api";
 
 const AdminHomecareDashboard = () => {
   const [bookings, setBookings] = useState([]);
@@ -11,7 +12,7 @@ const AdminHomecareDashboard = () => {
 
   const fetchBookings = async () => {
     try {
-      const res = await axios.get("http://localhost:8080/api/bookings");
+      const res = await axios.get(`${API_BASE}/bookings`);
       setBookings(res.data);
       setLoading(false);
     } catch (err) {
@@ -22,7 +23,7 @@ const AdminHomecareDashboard = () => {
 
   const updateStatus = async (id, newStatus) => {
     try {
-      await axios.put(`http://localhost:8080/api/bookings/${id}/status`, { status: newStatus });
+      await axios.put(`${API_BASE}/bookings/${id}/status`, { status: newStatus });
       setBookings((prev) => prev.map((b) => (b._id === id ? { ...b, status: newStatus } : b)));
     } catch (err) {
       console.error("❌ Error updating status:", err);

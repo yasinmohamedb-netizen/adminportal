@@ -3,6 +3,8 @@ import axios from "axios";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
+const API_BASE = "https://healthyz-backend.onrender.com/api";
+
 const AdminOrdersDashboard = () => {
   const [orders, setOrders] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -20,7 +22,7 @@ const AdminOrdersDashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const ordersRes = await axios.get(`http://localhost:8080/api/orders/all${query}`);
+      const ordersRes = await axios.get(`${API_BASE}/orders/all${query}`);
       if (!ordersRes.data.success) throw new Error("Failed to fetch orders");
 
       let fetchedOrders = ordersRes.data.orders;
@@ -37,7 +39,7 @@ const AdminOrdersDashboard = () => {
 
       setOrders(fetchedOrders);
 
-      const requestsRes = await axios.get(`http://localhost:8080/api/return-requests/all${query}`);
+      const requestsRes = await axios.get(`${API_BASE}/return-requests/all${query}`);
       setRequests(requestsRes.data.requests || []);
     } catch (err) {
       console.error("❌ Fetch error:", err);
@@ -106,7 +108,7 @@ const AdminOrdersDashboard = () => {
   // ---------------- Update Order Status ----------------
   const updateStatus = async (orderId, newStatus) => {
     try {
-      const res = await axios.put(`http://localhost:8080/api/orders/${orderId}/status`, { status: newStatus });
+      const res = await axios.put(`${API_BASE}/orders/${orderId}/status`, { status: newStatus });
       if (res.data.success) {
         setOrders((prevOrders) =>
           prevOrders.map((order) => (order._id === orderId ? { ...order, status: newStatus } : order))
@@ -126,7 +128,7 @@ const AdminOrdersDashboard = () => {
 
     setSavingShippers((prev) => ({ ...prev, [orderId]: true }));
     try {
-      const res = await axios.put(`http://localhost:8080/api/orders/${orderId}/shipper`, { shipperName });
+      const res = await axios.put(`${API_BASE}/orders/${orderId}/shipper`, { shipperName });
       if (res.data.success) {
         setOrders((prevOrders) =>
           prevOrders.map((o) =>

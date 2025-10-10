@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+const API_BASE = "https://healthyz-backend.onrender.com/api";
 
 const AdminConsultationsDashboard = () => {
   const [consultations, setConsultations] = useState([]);
@@ -9,7 +10,7 @@ const AdminConsultationsDashboard = () => {
   useEffect(() => {
     const fetchConsultations = async () => {
       try {
-        const res = await axios.get("http://localhost:8080/api/consultations/all");
+        const res = await axios.get(`${API_BASE}/consultations/all`);
         if (res.data.success) {
           // Add doctorName field locally for input
           const updated = res.data.consultations.map(c => ({
@@ -41,10 +42,8 @@ const AdminConsultationsDashboard = () => {
 
   const markAsComplete = async (consultationId, doctorName) => {
     try {
-      const res = await axios.put(
-        `http://localhost:8080/api/consultations/${consultationId}/complete`,
-        { doctorName }
-      );
+
+        const res = await axios.put(`${API_BASE}/consultations/${consultationId}/complete`, { doctorName });
       if (res.data.success) {
         setConsultations(prev =>
           prev.map(c =>
