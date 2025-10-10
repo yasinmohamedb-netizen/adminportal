@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  useNavigate,
+  useParams,
+  Navigate,
+} from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./firebase";
 
@@ -26,8 +34,19 @@ const linkStyle = {
   borderRadius: "5px",
 };
 
-// App Wrapper
-function AppWrapper() {
+// Wrapper component to handle undefined consultationId param
+function DoctorSubmitPrescriptionRoute() {
+  const { consultationId } = useParams();
+
+  if (consultationId === "undefined") {
+    // Redirect to clean URL without the "undefined" string param
+    return <Navigate to="/doctor/submit-prescription" replace />;
+  }
+
+  return <DoctorSubmitPrescriptionScreen />;
+}
+
+export default function AppWrapper() {
   return (
     <Router>
       <App />
@@ -50,44 +69,36 @@ function App() {
       }
       setLoadingUser(false);
     });
-
     return () => unsubscribe();
   }, []);
 
-  // Logout function
   const handleLogout = async (navigate) => {
     try {
       await auth.signOut();
       setUser(null);
-      navigate("/", { replace: true }); // always redirect to home
+      navigate("/", { replace: true });
     } catch (err) {
       console.error("Logout error:", err);
     }
   };
 
-  if (loadingUser) {
-    return <p style={{ textAlign: "center", marginTop: "50px" }}>Loading...</p>;
-  }
+  if (loadingUser) return <p style={{ textAlign: "center", marginTop: "50px" }}>Loading...</p>;
 
   return (
     <Routes>
-      {/* Wrap everything in Layout */}
       <Route path="/*" element={<Layout user={user} onLogout={handleLogout} />}>
-        {/* Home / Portal Page */}
+        {/* Home Page */}
         <Route
           index
           element={
             <div style={{ maxWidth: "600px", margin: "auto", padding: "20px", textAlign: "center" }}>
               <h2>Welcome to HealthYz Portal</h2>
               <div style={{ margin: "15px 0" }}>
-                <Link
-                  to="doctor/submit-prescription/68d3e68e5b4f28c12d420a0f"
-                  style={linkStyle}
-                >
-                  Doctor Consultation
+                {/* Link without consultation ID */}
+                <Link to="doctor/submit-prescription" style={linkStyle}>
+                  Doctor Consultation (Empty Form)
                 </Link>
               </div>
-
               {!user && (
                 <div>
                   <Link to="login" style={{ ...linkStyle, backgroundColor: "#28a745" }}>
@@ -95,7 +106,6 @@ function App() {
                   </Link>
                 </div>
               )}
-
               <div style={{ marginTop: "20px" }}>
                 <Link to="privacy-policy" style={{ ...linkStyle, backgroundColor: "#6c757d" }}>
                   Privacy Policy
@@ -108,13 +118,13 @@ function App() {
           }
         />
 
-        {/* Login Page */}
+        {/* Login */}
         <Route path="login" element={<LoginWrapper setUser={setUser} />} />
 
-        {/* Doctor Consultation */}
+        {/* Doctor Consultation with optional consultationId */}
         <Route
-          path="doctor/submit-prescription/:consultationId"
-          element={<DoctorSubmitPrescriptionScreen />}
+          path="doctor/submit-prescription/:consultationId?"
+          element={<DoctorSubmitPrescriptionRoute />}
         />
 
         {/* Admin Dashboards */}
@@ -171,5 +181,3 @@ function LoginWrapper({ setUser }) {
     />
   );
 }
-
-export default AppWrapper;

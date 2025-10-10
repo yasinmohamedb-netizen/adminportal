@@ -18,8 +18,16 @@ const DoctorSubmitPrescriptionScreen = () => {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch consultation details
   useEffect(() => {
+    if (!consultationId || consultationId === "undefined") {
+      // No consultationId, show empty manual entry form
+      setLoading(false);
+      setConsultation(null);
+      setMessage("Manual Prescription Entry – No consultation loaded");
+      return;
+    }
+
+    // Fetch consultation details
     const fetchConsultation = async () => {
       try {
         const res = await axios.get(`${API_BASE}/consultations/${consultationId}`);
@@ -30,9 +38,11 @@ const DoctorSubmitPrescriptionScreen = () => {
           ...prev,
           patientEmail: res.data.patientEmail || "",
         }));
+        setMessage("");
         console.log("✅ Fetched consultation:", res.data);
       } catch (err) {
         console.error("❌ Error fetching consultation:", err.response?.data || err.message);
+        setConsultation(null);
         setMessage("❌ Consultation not found or backend error");
       } finally {
         setLoading(false);
@@ -42,10 +52,8 @@ const DoctorSubmitPrescriptionScreen = () => {
     fetchConsultation();
   }, [consultationId]);
 
-  // Form input handler
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  // Submit prescription
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.patientEmail) {
@@ -56,12 +64,17 @@ const DoctorSubmitPrescriptionScreen = () => {
     setSubmitting(true);
     setMessage("Submitting prescription...");
     try {
-      const res = await axios.post(
-        `${API_BASE}/consultations/${consultationId}/submit-prescription`,
-        form
-      );
-      console.log("✅ Prescription submitted:", res.data);
-      setMessage("✅ Prescription submitted successfully!");
+      if (!consultationId || consultationId === "undefined") {
+        // No consultationId, do not call backend
+        setMessage("Manual Prescription Entry – No consultation loaded");
+      } else {
+        const res = await axios.post(
+          `${API_BASE}/consultations/${consultationId}/submit-prescription`,
+          form
+        );
+        console.log("✅ Prescription submitted:", res.data);
+        setMessage("✅ Prescription submitted successfully!");
+      }
     } catch (err) {
       console.error("❌ Error submitting prescription:", err.response?.data || err.message);
       setMessage(err.response?.data?.error || "❌ Unknown error submitting prescription");
@@ -71,11 +84,11 @@ const DoctorSubmitPrescriptionScreen = () => {
   };
 
   if (loading) return <p>Loading consultation...</p>;
-  if (!consultation) return <p>{message}</p>;
 
   return (
     <div style={{ maxWidth: "600px", margin: "auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
       <h2>Doctor: Submit Prescription</h2>
+
       {message && (
         <p
           style={{
@@ -89,13 +102,16 @@ const DoctorSubmitPrescriptionScreen = () => {
         </p>
       )}
 
-      <div style={{ marginBottom: "20px" }}>
-        <p><strong>Patient Name:</strong> {consultation.patientName || "N/A"}</p>
-        <p><strong>Mobile:</strong> {consultation.patientMobile || "N/A"}</p>
-        <p><strong>Age:</strong> {consultation.age || "N/A"}</p>
-        <p><strong>Gender:</strong> {consultation.gender || "N/A"}</p>
-        <p><strong>Issue:</strong> {consultation.diseaseDescription || "N/A"}</p>
-      </div>
+      {/* Show patient details only if consultation exists */}
+      {consultation && (
+        <div style={{ marginBottom: "20px" }}>
+          <p><strong>Patient Name:</strong> {consultation.patientName || "N/A"}</p>
+          <p><strong>Mobile:</strong> {consultation.patientMobile || "N/A"}</p>
+          <p><strong>Age:</strong> {consultation.age || "N/A"}</p>
+          <p><strong>Gender:</strong> {consultation.gender || "N/A"}</p>
+          <p><strong>Issue:</strong> {consultation.diseaseDescription || "N/A"}</p>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
         <label>
