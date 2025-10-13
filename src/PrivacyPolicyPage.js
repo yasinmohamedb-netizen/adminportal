@@ -6,7 +6,7 @@ export default function PrivacyPolicyPage() {
     <div style={{ maxWidth: "800px", margin: "auto", padding: "20px", lineHeight: "1.6" }}>
       <h1>HealthYz Privacy Policy</h1>
       <p>Last updated: October 2025</p>
-      <p>Contact: <a href="mailto:yasinmohamed.b@gmail.com">yasinmohamed.b@gmail.com</a></p>
+      <p>Contact: <a href="mailto:zayzhealthcare@gmail.com">zayzhealthcare@gmail.com</a></p>
 
       <p>
         Your privacy is important to us. This Privacy Policy explains how HealthYz (“we”, “our”, or “us”) collects, uses, and protects your information when you use our mobile app and services. By using HealthYz, you agree to the practices described below.
@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
         <li>Request deletion of your data</li>
         <li>Opt-out of analytics tracking where applicable</li>
       </ul>
-      <p>To exercise your rights, contact us at <a href="mailto:yasinmohamed.b@gmail.com">yasinmohamed.b@gmail.com</a></p>
+      <p>To exercise your rights, contact us at <a href="mailto:zayzhealthcare@gmail.com">zayzhealthcare@gmail.com</a></p>
 
       <h2>7. Data Retention</h2>
       <p>
@@ -73,7 +73,7 @@ export default function PrivacyPolicyPage() {
 
       <h2>10. Contact Us</h2>
       <p>
-        For any questions about this Privacy Policy or your data, contact us at <a href="mailto:yasinmohamed.b@gmail.com">yasinmohamed.b@gmail.com</a>.
+        For any questions about this Privacy Policy or your data, contact us at <a href="mailto:zayzhealthcare@gmail.com">zayzhealthcare@gmail.com</a>.
       </p>
     </div>
   );
