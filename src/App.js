@@ -4,11 +4,11 @@ import {
   Routes,
   Route,
   Link,
-  useNavigate,
-  useParams,
   Navigate,
+  useParams,
+  useNavigate,
 } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./firebase";
 
 // Pages / Screens
@@ -23,26 +23,12 @@ import PrivacyPolicyPage from "./PrivacyPolicyPage";
 import DeleteAccountPage from "./DeleteAccountPage";
 import Layout from "./Layout";
 
-// Link Styles
-const linkStyle = {
-  display: "inline-block",
-  margin: "10px 5px",
-  padding: "10px 15px",
-  backgroundColor: "#1e90ff",
-  color: "#fff",
-  textDecoration: "none",
-  borderRadius: "5px",
-};
-
-// Wrapper component to handle undefined consultationId param
+// Wrapper for DoctorSubmitPrescription to handle undefined ID
 function DoctorSubmitPrescriptionRoute() {
   const { consultationId } = useParams();
-
   if (consultationId === "undefined") {
-    // Redirect to clean URL without the "undefined" string param
     return <Navigate to="/doctor/submit-prescription" replace />;
   }
-
   return <DoctorSubmitPrescriptionScreen />;
 }
 
@@ -57,13 +43,12 @@ export default function AppWrapper() {
 function App() {
   const [user, setUser] = useState(null);
   const [loadingUser, setLoadingUser] = useState(true);
+  const navigate = useNavigate();
 
-  // Listen for Firebase auth changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        const role = firebaseUser.email === "admin@healthy.com" ? "admin" : "user";
-        setUser({ uid: firebaseUser.uid, email: firebaseUser.email, role });
+        setUser({ uid: firebaseUser.uid, email: firebaseUser.email });
       } else {
         setUser(null);
       }
@@ -72,9 +57,9 @@ function App() {
     return () => unsubscribe();
   }, []);
 
-  const handleLogout = async (navigate) => {
+  const handleLogout = async () => {
     try {
-      await auth.signOut();
+      await signOut(auth);
       setUser(null);
       navigate("/", { replace: true });
     } catch (err) {
@@ -82,56 +67,120 @@ function App() {
     }
   };
 
-  if (loadingUser) return <p style={{ textAlign: "center", marginTop: "50px" }}>Loading...</p>;
+  if (loadingUser)
+    return (
+      <p style={{ textAlign: "center", marginTop: "50px" }}>Loading...</p>
+    );
 
   return (
     <Routes>
-      <Route path="/*" element={<Layout user={user} onLogout={handleLogout} />}>
-        {/* Home Page */}
+      <Route
+        path="/"
+        element={<Layout user={user} onLogout={handleLogout} />}
+      >
+        {/* Home Route */}
         <Route
           index
           element={
-            <div style={{ maxWidth: "600px", margin: "auto", padding: "20px", textAlign: "center" }}>
+            <div
+              style={{
+                maxWidth: "600px",
+                margin: "auto",
+                padding: "20px",
+                textAlign: "center",
+              }}
+            >
               <h2>Welcome to HealthYz Portal</h2>
-              <div style={{ margin: "15px 0" }}>
-                {/* Link without consultation ID */}
-                <Link to="doctor/submit-prescription" style={linkStyle}>
-                  Doctor Consultation (Empty Form)
-                </Link>
-              </div>
+              {user && (
+                <div style={{ margin: "20px 0" }}>
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      padding: "10px 20px",
+                      backgroundColor: "#ff4d4f",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                      marginRight: "10px",
+                    }}
+                  >
+                    Force Logout
+                  </button>
+                </div>
+              )}
               {!user && (
-                <div>
-                  <Link to="login" style={{ ...linkStyle, backgroundColor: "#28a745" }}>
+                <div style={{ margin: "20px 0" }}>
+                  <Link
+                    to="/login"
+                    style={{
+                      display: "inline-block",
+                      padding: "10px 20px",
+                      backgroundColor: "#28a745",
+                      color: "#fff",
+                      textDecoration: "none",
+                      borderRadius: "5px",
+                    }}
+                  >
                     Admin Login
                   </Link>
                 </div>
               )}
               <div style={{ marginTop: "20px" }}>
-                <Link to="privacy-policy" style={{ ...linkStyle, backgroundColor: "#6c757d" }}>
+                <Link
+                  to="/doctor/submit-prescription"
+                  style={{
+                    display: "inline-block",
+                    padding: "10px 15px",
+                    backgroundColor: "#1e90ff",
+                    color: "#fff",
+                    textDecoration: "none",
+                    borderRadius: "5px",
+                    margin: "5px",
+                  }}
+                >
+                  Doctor Consultation (Empty Form)
+                </Link>
+              </div>
+              <div style={{ marginTop: "20px" }}>
+                <Link
+                  to="/privacy-policy"
+                  style={{
+                    display: "inline-block",
+                    padding: "10px 15px",
+                    backgroundColor: "#6c757d",
+                    color: "#fff",
+                    textDecoration: "none",
+                    borderRadius: "5px",
+                    margin: "5px",
+                  }}
+                >
                   Privacy Policy
                 </Link>
-                <Link to="delete-account" style={{ ...linkStyle, backgroundColor: "#dc3545" }}>
+                <Link
+                  to="/delete-account"
+                  style={{
+                    display: "inline-block",
+                    padding: "10px 15px",
+                    backgroundColor: "#dc3545",
+                    color: "#fff",
+                    textDecoration: "none",
+                    borderRadius: "5px",
+                    margin: "5px",
+                  }}
+                >
                   Delete Account
                 </Link>
               </div>
             </div>
           }
         />
-
-        {/* Login */}
         <Route path="login" element={<LoginWrapper setUser={setUser} />} />
-
-        {/* Doctor Consultation with optional consultationId */}
-        <Route
-          path="doctor/submit-prescription/:consultationId?"
-          element={<DoctorSubmitPrescriptionRoute />}
-        />
-
-        {/* Admin Dashboards */}
+        <Route path="doctor/submit-prescription/:consultationId?" element={<DoctorSubmitPrescriptionRoute />} />
         <Route
           path="admin/orders"
           element={
-            <ProtectedRoute user={user} allowedRoles={["admin"]}>
+            <ProtectedRoute user={user}>
               <AdminOrdersDashboard />
             </ProtectedRoute>
           }
@@ -139,7 +188,7 @@ function App() {
         <Route
           path="admin/consultations"
           element={
-            <ProtectedRoute user={user} allowedRoles={["admin"]}>
+            <ProtectedRoute user={user}>
               <AdminConsultationsDashboard />
             </ProtectedRoute>
           }
@@ -147,7 +196,7 @@ function App() {
         <Route
           path="admin/homecare"
           element={
-            <ProtectedRoute user={user} allowedRoles={["admin"]}>
+            <ProtectedRoute user={user}>
               <AdminHomecareDashboard />
             </ProtectedRoute>
           }
@@ -155,13 +204,11 @@ function App() {
         <Route
           path="admin/transplants"
           element={
-            <ProtectedRoute user={user} allowedRoles={["admin"]}>
+            <ProtectedRoute user={user}>
               <AdminTransplantsDashboard />
             </ProtectedRoute>
           }
         />
-
-        {/* Privacy / Delete Account */}
         <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="delete-account" element={<DeleteAccountPage />} />
       </Route>
@@ -169,7 +216,6 @@ function App() {
   );
 }
 
-// Login wrapper
 function LoginWrapper({ setUser }) {
   const navigate = useNavigate();
   return (
