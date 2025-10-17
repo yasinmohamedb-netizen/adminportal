@@ -7,9 +7,12 @@ const API_BASE = "https://healthyz-backend.onrender.com/api";
 function DeleteAccountPage() {
   const auth = getAuth();
 
-  const [email, setEmail] = useState("");
-  const [mobileNo, setMobileNo] = useState("");
-  const [username, setUsername] = useState("");
+  const [userDetails, setUserDetails] = useState({
+    email: "",
+    mobileNo: "",
+    username: "",
+    firebaseUid: "",
+  });
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -18,28 +21,41 @@ function DeleteAccountPage() {
     "Privacy concerns",
     "Creating a new account",
     "No longer using the service",
-    "Other"
+    "Other",
   ];
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setEmail(user.email || "");
-        setUsername(user.displayName || "");
-        // If your app saves mobile number separately, fetch from your backend or auth provider
-        // setMobileNo(user.phoneNumber || "");
+        const userData = {
+          email: user.email || "",
+          username: user.displayName || "",
+          firebaseUid: user.uid,
+          mobileNo: "",
+        };
+
+        try {
+          // Fetch extra details like mobileNo from backend
+          const res = await axios.get(`${API_BASE}/users/firebase/${user.uid}`);
+          if (res.data?.mobileNo) {
+            userData.mobileNo = res.data.mobileNo;
+          }
+        } catch (err) {
+          console.error("Error fetching user details:", err);
+        }
+
+        setUserDetails(userData);
       } else {
-        setEmail("");
-        setUsername("");
-        setMobileNo("");
+        setUserDetails({ email: "", username: "", mobileNo: "", firebaseUid: "" });
       }
     });
+
     return unsubscribe;
   }, [auth]);
 
   const handleDelete = async () => {
-    if (!email && !mobileNo) {
-      alert("Please provide your email or mobile number");
+    if (!userDetails.firebaseUid) {
+      alert("User not found. Please log in again.");
       return;
     }
     if (!reason) {
@@ -49,15 +65,13 @@ function DeleteAccountPage() {
 
     setLoading(true);
     try {
-      const res = await axios.post(`${API_BASE}/delete-account`, {
-        email,
-        mobileNo,
-        username,
-        reason,
-      });
+      const res = await axios.delete(
+        `${API_BASE}/users/firebase/${userDetails.firebaseUid}`,
+        { data: { reason } }
+      );
       setMessage(res.data.message || "Account deleted successfully.");
     } catch (err) {
-      console.error(err);
+      console.error("Delete error:", err);
       setMessage(err.response?.data?.message || "Error deleting account");
     } finally {
       setLoading(false);
@@ -67,25 +81,15 @@ function DeleteAccountPage() {
   return (
     <div style={containerStyle}>
       <h2>Delete Your Account</h2>
-      {username && <p>Hi <strong>{username}</strong>, please confirm your account deletion.</p>}
-      <p>Enter your email or mobile number and select a reason for deleting your account.</p>
+      {userDetails.username && (
+        <p>
+          Hi <strong>{userDetails.username}</strong>, please confirm your account deletion.
+        </p>
+      )}
+      <p>Your account details are automatically fetched below.</p>
 
-      <input
-        type="email"
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={inputStyle}
-        readOnly={!!email}
-      />
-
-      <input
-        type="tel"
-        placeholder="Mobile Number"
-        value={mobileNo}
-        onChange={(e) => setMobileNo(e.target.value)}
-        style={inputStyle}
-      />
+      <input type="email" value={userDetails.email} readOnly style={inputStyle} />
+      <input type="tel" value={userDetails.mobileNo} readOnly style={inputStyle} />
 
       <select
         value={reason}
@@ -94,7 +98,9 @@ function DeleteAccountPage() {
       >
         <option value="">Select a reason</option>
         {reasons.map((r, idx) => (
-          <option key={idx} value={r}>{r}</option>
+          <option key={idx} value={r}>
+            {r}
+          </option>
         ))}
       </select>
 
@@ -102,7 +108,16 @@ function DeleteAccountPage() {
         {loading ? "Deleting..." : "Delete Account"}
       </button>
 
-      {message && <p style={{ marginTop: "15px", color: message.includes("success") ? "green" : "red" }}>{message}</p>}
+      {message && (
+        <p
+          style={{
+            marginTop: "15px",
+            color: message.includes("success") ? "green" : "red",
+          }}
+        >
+          {message}
+        </p>
+      )}
     </div>
   );
 }
@@ -123,6 +138,8 @@ const inputStyle = {
   marginBottom: "15px",
   borderRadius: "5px",
   border: "1px solid #ccc",
+  backgroundColor: "#eee",
+  color: "#555",
 };
 
 const buttonStyle = {
