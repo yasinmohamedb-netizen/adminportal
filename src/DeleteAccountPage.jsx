@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+
 const API_BASE = "https://healthyz-backend.onrender.com/api";
 
-function DeleteAccountPage({ user }) {
-  const [email, setEmail] = useState(user?.email || "");
-  const [username] = useState(user?.fullName || "");
+function DeleteAccountPage() {
+  const auth = getAuth();
+
+  const [email, setEmail] = useState("");
+  const [mobileNo, setMobileNo] = useState("");
+  const [username, setUsername] = useState("");
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -16,14 +21,37 @@ function DeleteAccountPage({ user }) {
     "Other"
   ];
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setEmail(user.email || "");
+        setUsername(user.displayName || "");
+        // If your app saves mobile number separately, fetch from your backend or auth provider
+        // setMobileNo(user.phoneNumber || "");
+      } else {
+        setEmail("");
+        setUsername("");
+        setMobileNo("");
+      }
+    });
+    return unsubscribe;
+  }, [auth]);
+
   const handleDelete = async () => {
-    if (!email) return alert("Please enter your email");
-    if (!reason) return alert("Please select a reason for deleting your account");
+    if (!email && !mobileNo) {
+      alert("Please provide your email or mobile number");
+      return;
+    }
+    if (!reason) {
+      alert("Please select a reason for deleting your account");
+      return;
+    }
 
     setLoading(true);
     try {
       const res = await axios.post(`${API_BASE}/delete-account`, {
         email,
+        mobileNo,
         username,
         reason,
       });
@@ -40,7 +68,7 @@ function DeleteAccountPage({ user }) {
     <div style={containerStyle}>
       <h2>Delete Your Account</h2>
       {username && <p>Hi <strong>{username}</strong>, please confirm your account deletion.</p>}
-      <p>Enter your email and select a reason for deleting your account.</p>
+      <p>Enter your email or mobile number and select a reason for deleting your account.</p>
 
       <input
         type="email"
@@ -48,7 +76,15 @@ function DeleteAccountPage({ user }) {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         style={inputStyle}
-        readOnly={!!user} // If coming from app, email cannot be edited
+        readOnly={!!email}
+      />
+
+      <input
+        type="tel"
+        placeholder="Mobile Number"
+        value={mobileNo}
+        onChange={(e) => setMobileNo(e.target.value)}
+        style={inputStyle}
       />
 
       <select
