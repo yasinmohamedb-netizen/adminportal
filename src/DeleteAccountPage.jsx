@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 
 const API_BASE = "https://healthyz-backend.onrender.com/api";
 
@@ -16,6 +16,7 @@ function DeleteAccountPage() {
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [deleted, setDeleted] = useState(false);
 
   const reasons = [
     "Privacy concerns",
@@ -35,11 +36,9 @@ function DeleteAccountPage() {
         };
 
         try {
-          // Fetch extra details like mobileNo from backend
+          // Fetch additional info like mobileNo from backend
           const res = await axios.get(`${API_BASE}/users/firebase/${user.uid}`);
-          if (res.data?.mobileNo) {
-            userData.mobileNo = res.data.mobileNo;
-          }
+          if (res.data?.mobileNo) userData.mobileNo = res.data.mobileNo;
         } catch (err) {
           console.error("Error fetching user details:", err);
         }
@@ -69,7 +68,18 @@ function DeleteAccountPage() {
         `${API_BASE}/users/firebase/${userDetails.firebaseUid}`,
         { data: { reason } }
       );
+
       setMessage(res.data.message || "Account deleted successfully.");
+      setDeleted(true);
+
+      // Auto logout after deletion
+      await signOut(auth);
+
+      // Optional: redirect to home/login page
+      setTimeout(() => {
+        window.location.href = "/"; // Change to your login or landing page
+      }, 2000);
+
     } catch (err) {
       console.error("Delete error:", err);
       setMessage(err.response?.data?.message || "Error deleting account");
@@ -78,9 +88,14 @@ function DeleteAccountPage() {
     }
   };
 
+  if (!userDetails.firebaseUid) {
+    return <p style={containerStyle}>Please log in to delete your account.</p>;
+  }
+
   return (
     <div style={containerStyle}>
       <h2>Delete Your Account</h2>
+
       {userDetails.username && (
         <p>
           Hi <strong>{userDetails.username}</strong>, please confirm your account deletion.
@@ -95,6 +110,7 @@ function DeleteAccountPage() {
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         style={{ ...inputStyle, height: "45px" }}
+        disabled={deleted}
       >
         <option value="">Select a reason</option>
         {reasons.map((r, idx) => (
@@ -104,15 +120,19 @@ function DeleteAccountPage() {
         ))}
       </select>
 
-      <button onClick={handleDelete} disabled={loading} style={buttonStyle}>
-        {loading ? "Deleting..." : "Delete Account"}
+      <button
+        onClick={handleDelete}
+        disabled={loading || deleted}
+        style={buttonStyle}
+      >
+        {loading ? "Deleting..." : deleted ? "Account Deleted" : "Delete Account"}
       </button>
 
       {message && (
         <p
           style={{
             marginTop: "15px",
-            color: message.includes("success") ? "green" : "red",
+            color: message.toLowerCase().includes("success") ? "green" : "red",
           }}
         >
           {message}
