@@ -4,7 +4,7 @@ import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 
 const API_BASE = "https://healthyz-backend.onrender.com/api";
 
-function DeleteAccountPage() {
+function DeleteAccountPage({ urlUser }) { // urlUser can come from query params or props
   const auth = getAuth();
 
   const [userDetails, setUserDetails] = useState({
@@ -17,6 +17,7 @@ function DeleteAccountPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [deleted, setDeleted] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false); // Track auth initialization
 
   const reasons = [
     "Privacy concerns",
@@ -26,6 +27,13 @@ function DeleteAccountPage() {
   ];
 
   useEffect(() => {
+    // If urlUser is passed (from query params), use it
+    if (urlUser?.firebaseUid) {
+      setUserDetails(urlUser);
+      setAuthChecked(true);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const userData = {
@@ -36,7 +44,6 @@ function DeleteAccountPage() {
         };
 
         try {
-          // Fetch additional info like mobileNo from backend
           const res = await axios.get(`${API_BASE}/users/firebase/${user.uid}`);
           if (res.data?.mobileNo) userData.mobileNo = res.data.mobileNo;
         } catch (err) {
@@ -44,13 +51,12 @@ function DeleteAccountPage() {
         }
 
         setUserDetails(userData);
-      } else {
-        setUserDetails({ email: "", username: "", mobileNo: "", firebaseUid: "" });
       }
+      setAuthChecked(true);
     });
 
     return unsubscribe;
-  }, [auth]);
+  }, [auth, urlUser]); // Added urlUser to dependency array
 
   const handleDelete = async () => {
     if (!userDetails.firebaseUid) {
@@ -75,7 +81,7 @@ function DeleteAccountPage() {
       // Auto logout after deletion
       await signOut(auth);
 
-      // Optional: redirect to home/login page
+      // Redirect to home/login after 2 seconds
       setTimeout(() => {
         window.location.href = "/"; // Change to your login or landing page
       }, 2000);
@@ -88,6 +94,12 @@ function DeleteAccountPage() {
     }
   };
 
+  // Show loading while Firebase auth is being checked
+  if (!authChecked) {
+    return <p style={containerStyle}>Checking authentication...</p>;
+  }
+
+  // User not logged in
   if (!userDetails.firebaseUid) {
     return <p style={containerStyle}>Please log in to delete your account.</p>;
   }
@@ -142,6 +154,7 @@ function DeleteAccountPage() {
   );
 }
 
+// Styles
 const containerStyle = {
   maxWidth: "400px",
   margin: "50px auto",
