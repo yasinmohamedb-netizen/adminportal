@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
+import { useLocation } from "react-router-dom";
 
 const API_BASE = "https://healthyz-backend.onrender.com/api";
 
-function DeleteAccountPage({ urlUser }) { // urlUser can come from query params or props
+function useQuery() {
+  return new URLSearchParams(useLocation().search);
+}
+
+function DeleteAccountPage() {
   const auth = getAuth();
+  const query = useQuery();
 
   const [userDetails, setUserDetails] = useState({
     email: "",
@@ -17,7 +23,7 @@ function DeleteAccountPage({ urlUser }) { // urlUser can come from query params 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [deleted, setDeleted] = useState(false);
-  const [authChecked, setAuthChecked] = useState(false); // Track auth initialization
+  const [authChecked, setAuthChecked] = useState(false);
 
   const reasons = [
     "Privacy concerns",
@@ -27,13 +33,23 @@ function DeleteAccountPage({ urlUser }) { // urlUser can come from query params 
   ];
 
   useEffect(() => {
-    // If urlUser is passed (from query params), use it
-    if (urlUser?.firebaseUid) {
+    // Check URL params first (for testing with sample user)
+    const urlUser = query.get("firebaseUid")
+      ? {
+          firebaseUid: query.get("firebaseUid"),
+          username: query.get("fullName") || "",
+          email: query.get("email") || "",
+          mobileNo: query.get("mobileNo") || "",
+        }
+      : null;
+
+    if (urlUser) {
       setUserDetails(urlUser);
       setAuthChecked(true);
       return;
     }
 
+    // Otherwise, check Firebase auth
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const userData = {
@@ -42,21 +58,20 @@ function DeleteAccountPage({ urlUser }) { // urlUser can come from query params 
           firebaseUid: user.uid,
           mobileNo: "",
         };
-
         try {
           const res = await axios.get(`${API_BASE}/users/firebase/${user.uid}`);
           if (res.data?.mobileNo) userData.mobileNo = res.data.mobileNo;
         } catch (err) {
           console.error("Error fetching user details:", err);
         }
-
         setUserDetails(userData);
       }
       setAuthChecked(true);
     });
 
     return unsubscribe;
-  }, [auth, urlUser]); // Added urlUser to dependency array
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDelete = async () => {
     if (!userDetails.firebaseUid) {
@@ -81,11 +96,9 @@ function DeleteAccountPage({ urlUser }) { // urlUser can come from query params 
       // Auto logout after deletion
       await signOut(auth);
 
-      // Redirect to home/login after 2 seconds
       setTimeout(() => {
-        window.location.href = "/"; // Change to your login or landing page
+        window.location.href = "/"; // redirect after deletion
       }, 2000);
-
     } catch (err) {
       console.error("Delete error:", err);
       setMessage(err.response?.data?.message || "Error deleting account");
@@ -94,20 +107,13 @@ function DeleteAccountPage({ urlUser }) { // urlUser can come from query params 
     }
   };
 
-  // Show loading while Firebase auth is being checked
-  if (!authChecked) {
-    return <p style={containerStyle}>Checking authentication...</p>;
-  }
-
-  // User not logged in
-  if (!userDetails.firebaseUid) {
+  if (!authChecked) return <p style={containerStyle}>Checking authentication...</p>;
+  if (!userDetails.firebaseUid)
     return <p style={containerStyle}>Please log in to delete your account.</p>;
-  }
 
   return (
     <div style={containerStyle}>
       <h2>Delete Your Account</h2>
-
       {userDetails.username && (
         <p>
           Hi <strong>{userDetails.username}</strong>, please confirm your account deletion.
@@ -154,7 +160,6 @@ function DeleteAccountPage({ urlUser }) { // urlUser can come from query params 
   );
 }
 
-// Styles
 const containerStyle = {
   maxWidth: "400px",
   margin: "50px auto",
