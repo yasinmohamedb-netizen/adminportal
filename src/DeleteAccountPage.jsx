@@ -1,3 +1,4 @@
+// DeleteAccountPage.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
@@ -5,6 +6,7 @@ import { useLocation } from "react-router-dom";
 
 const API_BASE = "https://healthyz-backend.onrender.com/api";
 
+// Custom hook to read query parameters
 function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
@@ -33,7 +35,7 @@ function DeleteAccountPage() {
   ];
 
   useEffect(() => {
-    // Check URL params first (for testing with sample user)
+    // Check query params first
     const urlUser = query.get("firebaseUid")
       ? {
           firebaseUid: query.get("firebaseUid"),
@@ -49,7 +51,7 @@ function DeleteAccountPage() {
       return;
     }
 
-    // Otherwise, check Firebase auth
+    // Otherwise, check Firebase Auth
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const userData = {
@@ -97,7 +99,7 @@ function DeleteAccountPage() {
       await signOut(auth);
 
       setTimeout(() => {
-        window.location.href = "/"; // redirect after deletion
+        window.location.href = "/"; // redirect to home
       }, 2000);
     } catch (err) {
       console.error("Delete error:", err);
@@ -160,6 +162,7 @@ function DeleteAccountPage() {
   );
 }
 
+// Styles
 const containerStyle = {
   maxWidth: "400px",
   margin: "50px auto",
