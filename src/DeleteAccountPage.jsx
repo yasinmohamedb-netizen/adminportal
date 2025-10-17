@@ -1,4 +1,3 @@
-// DeleteAccountPage.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
@@ -6,7 +5,6 @@ import { useLocation } from "react-router-dom";
 
 const API_BASE = "https://healthyz-backend.onrender.com/api";
 
-// Custom hook to read query parameters
 function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
@@ -35,23 +33,22 @@ function DeleteAccountPage() {
   ];
 
   useEffect(() => {
-    // Check query params first
-    const urlUser = query.get("firebaseUid")
+    const urlUser = query.get("uid")
       ? {
-          firebaseUid: query.get("firebaseUid"),
+          firebaseUid: query.get("uid"),
           username: query.get("fullName") || "",
           email: query.get("email") || "",
           mobileNo: query.get("mobileNo") || "",
         }
       : null;
-
+  
     if (urlUser) {
       setUserDetails(urlUser);
       setAuthChecked(true);
-      return;
+      return; // stop if URL has user
     }
-
-    // Otherwise, check Firebase Auth
+  
+    // fallback to Firebase auth
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const userData = {
@@ -70,14 +67,15 @@ function DeleteAccountPage() {
       }
       setAuthChecked(true);
     });
-
+  
     return unsubscribe;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [auth, query]); // ✅ include dependencies
+  
+  
 
   const handleDelete = async () => {
     if (!userDetails.firebaseUid) {
-      alert("User not found. Please log in again.");
+      alert("User not found. Please log in or provide valid UID.");
       return;
     }
     if (!reason) {
@@ -87,6 +85,7 @@ function DeleteAccountPage() {
 
     setLoading(true);
     try {
+      // Call backend to verify and delete account
       const res = await axios.delete(
         `${API_BASE}/users/firebase/${userDetails.firebaseUid}`,
         { data: { reason } }
@@ -95,11 +94,12 @@ function DeleteAccountPage() {
       setMessage(res.data.message || "Account deleted successfully.");
       setDeleted(true);
 
-      // Auto logout after deletion
+      // Logout if logged in
       await signOut(auth);
 
+      // Redirect after 2 seconds
       setTimeout(() => {
-        window.location.href = "/"; // redirect to home
+        window.location.href = "/";
       }, 2000);
     } catch (err) {
       console.error("Delete error:", err);
@@ -109,7 +109,9 @@ function DeleteAccountPage() {
     }
   };
 
-  if (!authChecked) return <p style={containerStyle}>Checking authentication...</p>;
+  if (!authChecked)
+    return <p style={containerStyle}>Checking authentication...</p>;
+
   if (!userDetails.firebaseUid)
     return <p style={containerStyle}>Please log in to delete your account.</p>;
 
@@ -118,13 +120,24 @@ function DeleteAccountPage() {
       <h2>Delete Your Account</h2>
       {userDetails.username && (
         <p>
-          Hi <strong>{userDetails.username}</strong>, please confirm your account deletion.
+          Hi <strong>{userDetails.username}</strong>, please confirm your account
+          deletion.
         </p>
       )}
       <p>Your account details are automatically fetched below.</p>
 
-      <input type="email" value={userDetails.email} readOnly style={inputStyle} />
-      <input type="tel" value={userDetails.mobileNo} readOnly style={inputStyle} />
+      <input
+        type="email"
+        value={userDetails.email}
+        readOnly
+        style={inputStyle}
+      />
+      <input
+        type="tel"
+        value={userDetails.mobileNo}
+        readOnly
+        style={inputStyle}
+      />
 
       <select
         value={reason}
@@ -162,7 +175,6 @@ function DeleteAccountPage() {
   );
 }
 
-// Styles
 const containerStyle = {
   maxWidth: "400px",
   margin: "50px auto",
