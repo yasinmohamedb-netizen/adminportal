@@ -4,55 +4,94 @@ import axios from "axios";
 
 const API_BASE = "https://healthyz-backend.onrender.com/api";
 
+const defaultForm = {
+  doctorName: "",
+  diagnosis: "",
+  complaints: "",
+  findings: "",
+  medicines: [{ name: "", dosage: "", duration: "", detail: "" }],
+  advice: [""],
+  followUp: "",
+  patientEmail: "",
+};
+
 const DoctorSubmitPrescriptionScreen = () => {
   const { consultationId } = useParams();
   const [consultation, setConsultation] = useState(null);
-  const [form, setForm] = useState({
-    doctorName: "",
-    diagnosis: "",
-    medicines: "",
-    advice: "",
-    patientEmail: "",
-  });
+  const [form, setForm] = useState(defaultForm);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!consultationId || consultationId === "undefined") {
-      // No consultationId, show empty manual entry form
       setLoading(false);
       setConsultation(null);
       setMessage("Manual Prescription Entry – No consultation loaded");
       return;
     }
 
-    // Fetch consultation details
+    // Fetch consultation details (for displaying in header + autofill patient email)
     const fetchConsultation = async () => {
       try {
         const res = await axios.get(`${API_BASE}/consultations/${consultationId}`);
         if (!res.data) throw new Error("Consultation not found");
-
         setConsultation(res.data);
         setForm((prev) => ({
           ...prev,
           patientEmail: res.data.patientEmail || "",
         }));
         setMessage("");
-        console.log("✅ Fetched consultation:", res.data);
       } catch (err) {
-        console.error("❌ Error fetching consultation:", err.response?.data || err.message);
         setConsultation(null);
         setMessage("❌ Consultation not found or backend error");
       } finally {
         setLoading(false);
       }
     };
-
     fetchConsultation();
   }, [consultationId]);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // Dynamic medicines
+  const handleMedicineChange = (idx, field, value) => {
+    setForm((prev) => {
+      const arr = [...prev.medicines];
+      arr[idx][field] = value;
+      return { ...prev, medicines: arr };
+    });
+  };
+  const addMedicine = () => {
+    setForm((prev) => ({
+      ...prev,
+      medicines: [...prev.medicines, { name: "", dosage: "", duration: "", detail: "" }]
+    }));
+  };
+  const removeMedicine = (idx) => {
+    setForm((prev) => ({
+      ...prev,
+      medicines: prev.medicines.filter((_, i) => i !== idx)
+    }));
+  };
+
+  // Dynamic advice
+  const handleAdviceChange = (idx, value) => {
+    setForm((prev) => {
+      const arr = [...prev.advice];
+      arr[idx] = value;
+      return { ...prev, advice: arr };
+    });
+  };
+  const addAdvice = () =>
+    setForm((prev) => ({ ...prev, advice: [...prev.advice, ""] }));
+  const removeAdvice = (idx) =>
+    setForm((prev) => ({
+      ...prev,
+      advice: prev.advice.filter((_, i) => i !== idx)
+    }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -60,35 +99,30 @@ const DoctorSubmitPrescriptionScreen = () => {
       setMessage("❌ Patient email is required");
       return;
     }
-
     setSubmitting(true);
     setMessage("Submitting prescription...");
     try {
-      if (!consultationId || consultationId === "undefined") {
-        // No consultationId, do not call backend
-        setMessage("Manual Prescription Entry – No consultation loaded");
-      } else {
-        const res = await axios.post(
-          `${API_BASE}/consultations/${consultationId}/submit-prescription`,
-          form
-        );
-        console.log("✅ Prescription submitted:", res.data);
-        setMessage("✅ Prescription submitted successfully!");
-      }
+      await axios.post(
+        `${API_BASE}/consultations/${consultationId}/submit-prescription`,
+        form
+      );
+      setMessage("✅ Prescription submitted successfully!");
+      setForm(defaultForm);
     } catch (err) {
-      console.error("❌ Error submitting prescription:", err.response?.data || err.message);
-      setMessage(err.response?.data?.error || "❌ Unknown error submitting prescription");
+      setMessage(
+        err.response?.data?.error || "❌ Unknown error submitting prescription"
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <p>Loading consultation...</p>;
+  if (loading)
+    return <p>Loading consultation...</p>;
 
   return (
-    <div style={{ maxWidth: "600px", margin: "auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
+    <div style={{ maxWidth: "650px", margin: "auto", padding: "20px", fontFamily: "Arial, sans-serif" }}>
       <h2>Doctor: Submit Prescription</h2>
-
       {message && (
         <p
           style={{
@@ -102,9 +136,8 @@ const DoctorSubmitPrescriptionScreen = () => {
         </p>
       )}
 
-      {/* Show patient details only if consultation exists */}
       {consultation && (
-        <div style={{ marginBottom: "20px" }}>
+        <div style={{ marginBottom: "20px", borderBottom: "1px solid #ccc", paddingBottom: "10px" }}>
           <p><strong>Patient Name:</strong> {consultation.patientName || "N/A"}</p>
           <p><strong>Mobile:</strong> {consultation.patientMobile || "N/A"}</p>
           <p><strong>Age:</strong> {consultation.age || "N/A"}</p>
@@ -113,7 +146,7 @@ const DoctorSubmitPrescriptionScreen = () => {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
         <label>
           Doctor Name
           <input
@@ -125,7 +158,6 @@ const DoctorSubmitPrescriptionScreen = () => {
             style={{ width: "100%", padding: "8px", marginTop: "5px" }}
           />
         </label>
-
         <label>
           Diagnosis
           <textarea
@@ -133,35 +165,94 @@ const DoctorSubmitPrescriptionScreen = () => {
             value={form.diagnosis}
             onChange={handleChange}
             required
-            rows={3}
+            rows={2}
             style={{ width: "100%", padding: "8px", marginTop: "5px" }}
           />
         </label>
-
         <label>
-          Medicines
+          Chief Complaints
           <textarea
-            name="medicines"
-            value={form.medicines}
+            name="complaints"
+            value={form.complaints}
             onChange={handleChange}
-            required
-            rows={3}
+            rows={2}
             style={{ width: "100%", padding: "8px", marginTop: "5px" }}
           />
         </label>
-
         <label>
-          Advice
+          Clinical Findings
           <textarea
-            name="advice"
-            value={form.advice}
+            name="findings"
+            value={form.findings}
             onChange={handleChange}
-            required
-            rows={3}
+            rows={2}
             style={{ width: "100%", padding: "8px", marginTop: "5px" }}
           />
         </label>
-
+        <div>
+          <label>Medicines</label>
+          {form.medicines.map((med, idx) => (
+            <div key={idx} style={{ display: "flex", gap: "7px", marginBottom: "7px" }}>
+              <input
+                type="text"
+                placeholder="Name"
+                value={med.name}
+                onChange={e => handleMedicineChange(idx, "name", e.target.value)}
+                style={{ flex: 2, padding: "6px" }}
+              />
+              <input
+                type="text"
+                placeholder="Dosage"
+                value={med.dosage}
+                onChange={e => handleMedicineChange(idx, "dosage", e.target.value)}
+                style={{ flex: 1, padding: "6px" }}
+              />
+              <input
+                type="text"
+                placeholder="Duration"
+                value={med.duration}
+                onChange={e => handleMedicineChange(idx, "duration", e.target.value)}
+                style={{ flex: 1, padding: "6px" }}
+              />
+              <input
+                type="text"
+                placeholder="Detail (optional)"
+                value={med.detail}
+                onChange={e => handleMedicineChange(idx, "detail", e.target.value)}
+                style={{ flex: 1, padding: "6px" }}
+              />
+              <button type="button" onClick={() => removeMedicine(idx)} style={{ color: "red", fontWeight: "bold" }}>&times;</button>
+            </div>
+          ))}
+          <button type="button" onClick={addMedicine} style={{ marginTop: "5px" }}>Add Medicine</button>
+        </div>
+        <div>
+          <label>Advice</label>
+          {form.advice.map((ad, idx) => (
+            <div key={idx} style={{ display: "flex", gap: "7px", marginBottom: "7px" }}>
+              <input
+                type="text"
+                placeholder="Advice"
+                value={ad}
+                onChange={e => handleAdviceChange(idx, e.target.value)}
+                style={{ flex: 1, padding: "6px" }}
+              />
+              <button type="button" onClick={() => removeAdvice(idx)} style={{ color: "red", fontWeight: "bold" }}>&times;</button>
+            </div>
+          ))}
+          <button type="button" onClick={addAdvice} style={{ marginTop: "5px" }}>Add Advice</button>
+        </div>
+        <label>
+          Follow Up
+          <input
+            type="text"
+            name="followUp"
+            value={form.followUp}
+            onChange={handleChange}
+            placeholder="Next visit or notes"
+            style={{ width: "100%", padding: "8px", marginTop: "5px" }}
+          />
+        </label>
         <label>
           Patient Email
           <input
@@ -173,7 +264,6 @@ const DoctorSubmitPrescriptionScreen = () => {
             style={{ width: "100%", padding: "8px", marginTop: "5px" }}
           />
         </label>
-
         <button
           type="submit"
           disabled={submitting}
