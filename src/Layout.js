@@ -35,14 +35,48 @@ const Layout = ({ user, onLogout }) => {
           }}
         >
           <h1>HealthYz Portal</h1>
+
           <nav>
             <Link to="/" style={linkStyle("/")}>Home</Link>
+
             {user && (
               <>
-                <Link to="/admin/orders" style={linkStyle("/admin/orders")}>Orders</Link>
-                <Link to="/admin/consultations" style={linkStyle("/admin/consultations")}>Consultations</Link>
-                <Link to="/admin/homecare" style={linkStyle("/admin/homecare")}>Homecare</Link>
-                <Link to="/admin/transplants" style={linkStyle("/admin/transplants")}>Transplants</Link>
+                <Link
+                  to="/admin/orders"
+                  style={linkStyle("/admin/orders")}
+                >
+                  Orders
+                </Link>
+
+                <Link
+                  to="/admin/consultations"
+                  style={linkStyle("/admin/consultations")}
+                >
+                  Consultations
+                </Link>
+
+                <Link
+                  to="/admin/homecare"
+                  style={linkStyle("/admin/homecare")}
+                >
+                  Homecare
+                </Link>
+
+                <Link
+                  to="/admin/transplants"
+                  style={linkStyle("/admin/transplants")}
+                >
+                  Transplants
+                </Link>
+
+                {/* ⭐ NEW Anonymous Q&A menu */}
+                <Link
+                  to="/admin/qa"
+                  style={linkStyle("/admin/qa")}
+                >
+                  Q&A
+                </Link>
+
                 <button
                   onClick={handleLogoutClick}
                   style={{
@@ -59,6 +93,7 @@ const Layout = ({ user, onLogout }) => {
                 </button>
               </>
             )}
+
             {!user && (
               <Link
                 to="/login"
@@ -77,6 +112,7 @@ const Layout = ({ user, onLogout }) => {
           </nav>
         </header>
       )}
+
       <main style={{ padding: "20px" }}>
         <Outlet />
       </main>

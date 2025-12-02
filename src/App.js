@@ -23,6 +23,9 @@ import PrivacyPolicyPage from "./PrivacyPolicyPage";
 import DeleteAccountPage from "./DeleteAccountPage";
 import Layout from "./Layout";
 
+// NEW IMPORT FOR Q&A PAGE
+import AdminQA from "./screens/AdminQA";
+
 // Wrapper for DoctorSubmitPrescription to handle undefined ID
 function DoctorSubmitPrescriptionRoute() {
   const { consultationId } = useParams();
@@ -91,6 +94,7 @@ function App() {
               }}
             >
               <h2>Welcome to HealthYz Portal</h2>
+
               {user && (
                 <div style={{ margin: "20px 0" }}>
                   <button
@@ -109,6 +113,7 @@ function App() {
                   </button>
                 </div>
               )}
+
               {!user && (
                 <div style={{ margin: "20px 0" }}>
                   <Link
@@ -126,6 +131,7 @@ function App() {
                   </Link>
                 </div>
               )}
+
               <div style={{ marginTop: "20px" }}>
                 <Link
                   to="/doctor/submit-prescription"
@@ -142,6 +148,7 @@ function App() {
                   Doctor Consultation (Empty Form)
                 </Link>
               </div>
+
               <div style={{ marginTop: "20px" }}>
                 <Link
                   to="/privacy-policy"
@@ -157,6 +164,7 @@ function App() {
                 >
                   Privacy Policy
                 </Link>
+
                 <Link
                   to="/delete-account"
                   style={{
@@ -175,8 +183,14 @@ function App() {
             </div>
           }
         />
+
         <Route path="login" element={<LoginWrapper setUser={setUser} />} />
-        <Route path="doctor/submit-prescription/:consultationId?" element={<DoctorSubmitPrescriptionRoute />} />
+
+        <Route
+          path="doctor/submit-prescription/:consultationId?"
+          element={<DoctorSubmitPrescriptionRoute />}
+        />
+
         <Route
           path="admin/orders"
           element={
@@ -185,6 +199,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="admin/consultations"
           element={
@@ -193,6 +208,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="admin/homecare"
           element={
@@ -201,6 +217,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="admin/transplants"
           element={
@@ -209,6 +226,17 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* ⭐ NEW Admin Anonymous Q&A Page */}
+        <Route
+          path="admin/qa"
+          element={
+            <ProtectedRoute user={user}>
+              <AdminQA />
+            </ProtectedRoute>
+          }
+        />
+
         <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="delete-account" element={<DeleteAccountPage />} />
       </Route>
