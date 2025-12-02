@@ -24,7 +24,7 @@ import DeleteAccountPage from "./DeleteAccountPage";
 import Layout from "./Layout";
 
 // NEW IMPORT FOR Q&A PAGE
-import AdminQA from "./screens/AdminQA";
+import AdminQA from "./AdminQA";
 
 // Wrapper for DoctorSubmitPrescription to handle undefined ID
 function DoctorSubmitPrescriptionRoute() {
