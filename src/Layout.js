@@ -15,7 +15,7 @@ const Layout = ({ user, onLogout }) => {
     await onLogout(navigate);
   };
 
-  // Hide header for specific paths
+  // Hide header on specific pages
   const hideHeader =
     location.pathname === "/privacy-policy" ||
     location.pathname === "/delete-account" ||
@@ -69,7 +69,15 @@ const Layout = ({ user, onLogout }) => {
                   Transplants
                 </Link>
 
-                {/* ⭐ NEW Anonymous Q&A menu */}
+                {/* ⭐ New: Add Product Page */}
+                <Link
+                  to="/admin/products"
+                  style={linkStyle("/admin/products")}
+                >
+                  Products
+                </Link>
+
+                {/* ⭐ New: Anonymous Q&A */}
                 <Link
                   to="/admin/qa"
                   style={linkStyle("/admin/qa")}

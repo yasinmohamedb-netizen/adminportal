@@ -1,3 +1,5 @@
+// /Users/mohamedyasin/Desktop/HealthcareApp/adminportal/src/App.jsx
+
 import React, { useState, useEffect } from "react";
 import {
   BrowserRouter as Router,
@@ -8,10 +10,11 @@ import {
   useParams,
   useNavigate,
 } from "react-router-dom";
+
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "./firebase";
 
-// Pages / Screens
+// Screens / Pages
 import Login from "./Login";
 import ProtectedRoute from "./ProtectedRoute";
 import DoctorSubmitPrescriptionScreen from "./DoctorSubmitPrescriptionScreen";
@@ -23,10 +26,11 @@ import PrivacyPolicyPage from "./PrivacyPolicyPage";
 import DeleteAccountPage from "./DeleteAccountPage";
 import Layout from "./Layout";
 
-// NEW IMPORT FOR Q&A PAGE
+// NEW imports
 import AdminQA from "./AdminQA";
+import AdminProductForm from "./AdminProductForm";
 
-// Wrapper for DoctorSubmitPrescription to handle undefined ID
+// Wrapper for DoctorSubmitPrescription when consultationId is undefined
 function DoctorSubmitPrescriptionRoute() {
   const { consultationId } = useParams();
   if (consultationId === "undefined") {
@@ -49,7 +53,7 @@ function App() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setUser({ uid: firebaseUser.uid, email: firebaseUser.email });
       } else {
@@ -57,7 +61,7 @@ function App() {
       }
       setLoadingUser(false);
     });
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
   const handleLogout = async () => {
@@ -81,7 +85,9 @@ function App() {
         path="/"
         element={<Layout user={user} onLogout={handleLogout} />}
       >
-        {/* Home Route */}
+        {/* =========================== */}
+        {/* HOME PAGE */}
+        {/* =========================== */}
         <Route
           index
           element={
@@ -184,13 +190,20 @@ function App() {
           }
         />
 
+        {/* =========================== */}
+        {/* AUTH */}
+        {/* =========================== */}
         <Route path="login" element={<LoginWrapper setUser={setUser} />} />
 
+        {/* Doctor submit prescription */}
         <Route
           path="doctor/submit-prescription/:consultationId?"
           element={<DoctorSubmitPrescriptionRoute />}
         />
 
+        {/* =========================== */}
+        {/* ADMIN DASHBOARDS */}
+        {/* =========================== */}
         <Route
           path="admin/orders"
           element={
@@ -227,7 +240,21 @@ function App() {
           }
         />
 
-        {/* ⭐ NEW Admin Anonymous Q&A Page */}
+        {/* =========================== */}
+        {/* NEW: Admin Product Upload Page */}
+        {/* =========================== */}
+        <Route
+          path="admin/products"
+          element={
+            <ProtectedRoute user={user}>
+              <AdminProductForm />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* =========================== */}
+        {/* NEW: Admin Anonymous QA */}
+        {/* =========================== */}
         <Route
           path="admin/qa"
           element={
@@ -237,6 +264,7 @@ function App() {
           }
         />
 
+        {/* Policies */}
         <Route path="privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="delete-account" element={<DeleteAccountPage />} />
       </Route>
