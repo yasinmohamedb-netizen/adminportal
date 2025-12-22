@@ -1,0 +1,110 @@
+.admin-wrapper {
+    background: #f5f7fb;
+    min-height: 100vh;
+    padding: 40px 16px;
+  }
+  
+  .admin-card {
+    max-width: 800px;
+    margin: auto;
+    background: #ffffff;
+    padding: 32px;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  }
+  
+  .admin-card h2 {
+    margin-bottom: 24px;
+    font-size: 24px;
+    color: #1f2937;
+  }
+  
+  .admin-card h3 {
+    margin: 24px 0 12px;
+    font-size: 18px;
+    color: #374151;
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #374151;
+  }
+  
+  input,
+  select,
+  textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    margin-bottom: 16px;
+    font-size: 14px;
+  }
+  
+  textarea {
+    resize: vertical;
+  }
+  
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  
+  .variant-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  
+  .remove-btn {
+    background: #fee2e2;
+    border: none;
+    border-radius: 6px;
+    padding: 0 10px;
+    cursor: pointer;
+    color: #b91c1c;
+  }
+  
+  .primary-btn {
+    width: 100%;
+    padding: 14px;
+    margin-top: 20px;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  
+  .primary-btn:disabled {
+    background: #93c5fd;
+  }
+  
+  .secondary-btn {
+    background: #e5e7eb;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-bottom: 16px;
+  }
+  
+  .secondary-btn:hover {
+    background: #d1d5db;
+  }
+  
+  @media (max-width: 640px) {
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .variant-row {
+      grid-template-columns: 1fr;
+    }
+  }
+  

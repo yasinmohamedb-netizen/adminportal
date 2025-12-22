@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import axios from "axios";
+import "./AdminProductForm.css";
 
 export default function AdminProductForm() {
-  const BACKEND_URL = "https://healthyz-backend.onrender.com";
+  const BACKEND_URL = "http://localhost:8080";
 
   const [form, setForm] = useState({
     category: "",
@@ -13,13 +14,13 @@ export default function AdminProductForm() {
     tax: "",
   });
 
+  const [variants, setVariants] = useState([]);
   const [files, setFiles] = useState([]);
   const [uploadedUrls, setUploadedUrls] = useState([]);
-  const [manualUrls, setManualUrls] = useState(""); // NEW FIELD
+  const [manualUrls, setManualUrls] = useState("");
   const [loadingUpload, setLoadingUpload] = useState(false);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
 
-  // All categories matching your backend
   const categories = [
     "babycare",
     "beauty",
@@ -34,9 +35,22 @@ export default function AdminProductForm() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // -------------------------------------------
-  // UPLOAD IMAGES TO BACKEND → S3
-  // -------------------------------------------
+  // ================= VARIANTS =================
+  const addVariant = () => {
+    setVariants([...variants, { label: "", price: "", discount: "" }]);
+  };
+
+  const updateVariant = (index, field, value) => {
+    const updated = [...variants];
+    updated[index][field] = value;
+    setVariants(updated);
+  };
+
+  const removeVariant = (index) => {
+    setVariants(variants.filter((_, i) => i !== index));
+  };
+
+  // ================= IMAGE UPLOAD =================
   const uploadImages = async () => {
     if (files.length === 0) {
       alert("Please select images");
@@ -45,7 +59,6 @@ export default function AdminProductForm() {
 
     try {
       setLoadingUpload(true);
-
       const fd = new FormData();
       files.forEach((file) => fd.append("images", file));
 
@@ -56,55 +69,57 @@ export default function AdminProductForm() {
       );
 
       setUploadedUrls(res.data.urls);
-      alert("Images uploaded!");
+      alert("Images uploaded successfully");
     } catch (err) {
-      alert("Image upload failed");
       console.error(err);
+      alert("Image upload failed");
     } finally {
       setLoadingUpload(false);
     }
   };
 
-  // -------------------------------------------
-  // CREATE PRODUCT IN DB
-  // -------------------------------------------
+  // ================= CREATE PRODUCT =================
   const submitProduct = async () => {
     if (!form.category || !form.name || !form.price || !form.description) {
       alert("Please fill all required fields");
       return;
     }
 
-    // Convert manual URLs into array
-    let urlList = manualUrls
-      .split("\n")
-      .map((u) => u.trim())
-      .filter((u) => u.length > 0);
-
-    // Combine manual URLs + uploaded S3 URLs
-    const finalImages = [...uploadedUrls, ...urlList];
+    const finalImages = [
+      ...uploadedUrls,
+      ...manualUrls
+        .split("\n")
+        .map((u) => u.trim())
+        .filter(Boolean),
+    ];
 
     if (finalImages.length === 0) {
-      alert("Please upload images or paste image URLs");
+      alert("Please upload or add image URLs");
       return;
     }
+
+    const cleanedVariants = variants
+      .filter((v) => v.label && v.price)
+      .map((v) => ({
+        label: v.label,
+        price: Number(v.price),
+        discount: Number(v.discount) || 0,
+      }));
 
     try {
       setLoadingSubmit(true);
 
-      const res = await axios.post(
-        `${BACKEND_URL}/api/admin/products/create`,
-        {
-          ...form,
-          price: Number(form.price),
-          discount: Number(form.discount) || 0,
-          tax: Number(form.tax) || 0,
-          images: finalImages,
-        }
-      );
+      await axios.post(`${BACKEND_URL}/api/admin/products/create`, {
+        ...form,
+        price: Number(form.price),
+        discount: Number(form.discount) || 0,
+        tax: Number(form.tax) || 0,
+        images: finalImages,
+        variants: cleanedVariants,
+      });
 
-      alert("Product Created!");
+      alert("Product created successfully");
 
-      // Reset form
       setForm({
         category: "",
         name: "",
@@ -113,6 +128,7 @@ export default function AdminProductForm() {
         discount: "",
         tax: "",
       });
+      setVariants([]);
       setFiles([]);
       setUploadedUrls([]);
       setManualUrls("");
@@ -125,138 +141,112 @@ export default function AdminProductForm() {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: "600px",
-        margin: "40px auto",
-        padding: "20px",
-        border: "1px solid #ddd",
-        borderRadius: "10px",
-      }}
-    >
-      <h2 style={{ textAlign: "center" }}>Create Product</h2>
+    <div className="admin-wrapper">
+      <div className="admin-card">
+        <h2>Create Product</h2>
 
-      {/* CATEGORY */}
-      <label>Category *</label>
-      <select
-        name="category"
-        value={form.category}
-        onChange={handleChange}
-        style={{ width: "100%", padding: "8px", marginBottom: "12px" }}
-      >
-        <option value="">Select category</option>
-        {categories.map((c) => (
-          <option key={c} value={c}>
-            {c.toUpperCase()}
-          </option>
+        <div className="form-grid">
+          <div>
+            <label>Category *</label>
+            <select name="category" value={form.category} onChange={handleChange}>
+              <option value="">Select category</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label>Product Name *</label>
+            <input name="name" value={form.name} onChange={handleChange} />
+          </div>
+
+          <div>
+            <label>Base Price *</label>
+            <input type="number" name="price" value={form.price} onChange={handleChange} />
+          </div>
+
+          <div>
+            <label>Discount %</label>
+            <input type="number" name="discount" value={form.discount} onChange={handleChange} />
+          </div>
+
+          <div>
+            <label>Tax %</label>
+            <input type="number" name="tax" value={form.tax} onChange={handleChange} />
+          </div>
+        </div>
+
+        <label>Description *</label>
+        <textarea
+          rows={4}
+          name="description"
+          value={form.description}
+          onChange={handleChange}
+        />
+
+        {/* VARIANTS */}
+        <h3>Variants (Optional)</h3>
+
+        {variants.map((variant, i) => (
+          <div className="variant-row" key={i}>
+            <input
+              placeholder="Label (e.g. 200ml)"
+              value={variant.label}
+              onChange={(e) => updateVariant(i, "label", e.target.value)}
+            />
+            <input
+              type="number"
+              placeholder="Price"
+              value={variant.price}
+              onChange={(e) => updateVariant(i, "price", e.target.value)}
+            />
+            <input
+              type="number"
+              placeholder="Discount %"
+              value={variant.discount}
+              onChange={(e) => updateVariant(i, "discount", e.target.value)}
+            />
+            <button className="remove-btn" onClick={() => removeVariant(i)}>
+              ✕
+            </button>
+          </div>
         ))}
-      </select>
 
-      {/* NAME */}
-      <label>Name *</label>
-      <input
-        name="name"
-        value={form.name}
-        onChange={handleChange}
-        placeholder="Product Name"
-        style={{ width: "100%", padding: "8px", marginBottom: "12px" }}
-      />
+        <button className="secondary-btn" onClick={addVariant}>
+          + Add Variant
+        </button>
 
-      {/* PRICE */}
-      <label>Price *</label>
-      <input
-        name="price"
-        value={form.price}
-        onChange={handleChange}
-        placeholder="Product Price"
-        type="number"
-        style={{ width: "100%", padding: "8px", marginBottom: "12px" }}
-      />
+        {/* IMAGES */}
+        <h3>Images</h3>
 
-      {/* DISCOUNT */}
-      <label>Discount</label>
-      <input
-        name="discount"
-        value={form.discount}
-        onChange={handleChange}
-        placeholder="Discount %"
-        type="number"
-        style={{ width: "100%", padding: "8px", marginBottom: "12px" }}
-      />
+        <input type="file" multiple onChange={(e) => setFiles([...e.target.files])} />
 
-      {/* TAX */}
-      <label>Tax</label>
-      <input
-        name="tax"
-        value={form.tax}
-        onChange={handleChange}
-        placeholder="Tax %"
-        type="number"
-        style={{ width: "100%", padding: "8px", marginBottom: "12px" }}
-      />
+        <button
+          className="secondary-btn"
+          onClick={uploadImages}
+          disabled={loadingUpload}
+        >
+          {loadingUpload ? "Uploading..." : "Upload Images"}
+        </button>
 
-      {/* DESCRIPTION */}
-      <label>Description *</label>
-      <textarea
-        name="description"
-        value={form.description}
-        onChange={handleChange}
-        placeholder="Product Description"
-        rows="4"
-        style={{ width: "100%", padding: "8px", marginBottom: "12px" }}
-      ></textarea>
+        <label>Or paste image URLs (one per line)</label>
+        <textarea
+          rows={3}
+          value={manualUrls}
+          onChange={(e) => setManualUrls(e.target.value)}
+        />
 
-      {/* IMAGES UPLOAD */}
-      <label>Upload Images *</label>
-      <input
-        type="file"
-        multiple
-        onChange={(e) => setFiles([...e.target.files])}
-        style={{ marginBottom: "10px" }}
-      />
-
-      {files.length > 0 && <p>{files.length} files selected</p>}
-
-      <button
-        onClick={uploadImages}
-        disabled={loadingUpload}
-        style={{
-          padding: "10px",
-          width: "100%",
-          marginBottom: "15px",
-          background: loadingUpload ? "#ccc" : "#2a7bf3",
-          color: "#fff",
-          border: "none",
-          borderRadius: "5px",
-        }}
-      >
-        {loadingUpload ? "Uploading..." : "Upload Images"}
-      </button>
-
-      {/* MANUAL IMAGE URL INPUT */}
-      <label>Or Paste Image URLs (one per line)</label>
-      <textarea
-        value={manualUrls}
-        onChange={(e) => setManualUrls(e.target.value)}
-        placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"
-        rows="4"
-        style={{ width: "100%", padding: "8px", marginTop: "5px", marginBottom: "15px" }}
-      ></textarea>
-
-      <button
-        onClick={submitProduct}
-        disabled={loadingSubmit}
-        style={{
-          padding: "10px",
-          width: "100%",
-          background: loadingSubmit ? "#ccc" : "#10b759",
-          color: "#fff",
-          border: "none",
-          borderRadius: "5px",
-        }}
-      >
-        {loadingSubmit ? "Saving..." : "Create Product"}
-      </button>
+        <button
+          className="primary-btn"
+          onClick={submitProduct}
+          disabled={loadingSubmit}
+        >
+          {loadingSubmit ? "Saving..." : "Create Product"}
+        </button>
+      </div>
     </div>
   );
 }
